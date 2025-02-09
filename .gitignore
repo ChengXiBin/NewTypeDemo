@@ -1,0 +1,15 @@
+﻿# 忽略 Node.js 的 node_modules 資料夾
+node_modules/
+
+# 忽略 Visual Studio 的 .vs 目錄
+.vs/
+
+# 忽略 .NET 編譯產物
+backend/bin/
+backend/obj/
+
+# 忽略前端的 node_modules
+frontend/node_modules/
+
+# 忽略所有 .log 日誌檔案
+*.log
