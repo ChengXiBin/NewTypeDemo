@@ -3,6 +3,6 @@
     public class AddDepartmentDto
     {
         public string Name {  get; set; }
-        public Guid AffiliatedDepartmentID {  get; set; }
+        public Guid? AffiliatedDepartmentID {  get; set; }
     }
 }

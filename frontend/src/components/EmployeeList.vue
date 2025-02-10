@@ -17,8 +17,8 @@
         </tr>
       </thead>
       <tbody>
-        <tr v-for="employee in employees" :key="employee.id">
-          <td>{{ employee.name }}</td>
+        <tr v-for="employee in employees" :key="employee.employeeID">
+          <td>{{ employee.displayName }}</td>
           <td>{{ employee.department }}</td>
           <td>
             <button
@@ -39,23 +39,23 @@
         <input
           type="text"
           class="form-control mb-2"
-          v-model="newEmployee.name"
+          v-model="newEmployee.displayName"
           placeholder="姓名"
         />
         <select class="form-select mb-2" v-model="newEmployee.department">
           <option value="" disabled>請選擇部門</option>
-          <option v-for="dept in departments" :key="dept" :value="dept">
-            {{ dept }}
+          <option v-for="dept in departments" :key="dept.departmentID" :value="dept.departmentID">
+            {{ dept.name }}
           </option>
         </select>
         <input
           type="text"
           class="form-control mb-2"
-          v-model="newEmployee.account"
+          v-model="newEmployee.accountID"
           placeholder="帳號"
         />
         <input
-          type="text"
+          type="password"
           class="form-control mb-2"
           v-model="newEmployee.password"
           placeholder="密碼"
@@ -87,7 +87,7 @@
           placeholder="姓名"
         />
         <select class="form-select mb-2" v-model="selectedEmployee.department">
-          <option v-for="dept in departments" :key="dept" :value="dept">
+          <option v-for="dept in departments" :key="dept.departmentID" :value="dept.departmentID">
             {{ dept }}
           </option>
         </select>
@@ -114,28 +114,31 @@ const employees = ref([]);
 const showAddPopup = ref(false);
 const showEditPopup = ref(false);
 const newEmployee = ref({
-        AccountID: "",
-        Password: "",
-        DisplayName: "",
-        Email: "",
-        DepartmentIDs: [],
+        accountID: "",
+        password: "",
+        displayName: "",
+        email: "",
+        departmentIDs: [],
       });
 const selectedEmployee = ref(null);
 const departments = ref(null);
 
 const getDepartments = async ()=>{
   try{
+    console.log("開始getDepartments")
     const response = await axios.get(`${API_BASE_URL}/Department`);
     departments.value = response.data;
+    console.log(response.data);
   }catch(error){
     console.error("取得部門列表失敗",error);
 }};
 
 //取得員工列表
-const getEmployees = async ()=>{
+const fetchEmployees = async ()=>{
   try{
     const response = await axios.get(`${API_BASE_URL}/Employee`);
     employees.value = response.data;
+    console.log("開始fetchEmployees",response.data)
   }catch(error){
     console.error("取得員工列表失敗",error);
 }};
@@ -146,21 +149,23 @@ const addEmployee = async ()=> {
    console.log(`新增員工訊息: ${response.data}`);
    showAddPopup.value = false;
    newEmployee.value = { AccountID:"", Password:"",DisplayName:"",Email:"",DepartmentIDs:[]};
-   getEmployees();
+   fetchEmployees();
   }catch(error){
     console.error("新增員工失敗",error);
 }};
 
 const updateEmployee = async () => {
       try{
-
-        getEmployees();
+        fetchEmployees();
       }catch(error){
         console.error("員工失敗",error);
       }
     };
 
-onMounted(getEmployees,getDepartments);
+onMounted(()=>{
+  fetchEmployees();
+  getDepartments();
+});
 </script>
 
 <style scoped>

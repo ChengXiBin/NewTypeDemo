@@ -1,76 +1,98 @@
 <template>
   <div class="modal-overlay">
     <div class="modal-content">
-      <h3>{{ department?.id ? "編輯部門" : "新增部門" }}</h3>
+      <h3>{{ isEditMode ? "編輯部門" : "新增部門" }}</h3>
 
-      <label>部門名稱：</label>
-      <input type="text" v-model="formData.name" />
+      <div class="form-group">
+        <label>部門名稱：</label>
+        <input type="text" v-model="localForm.name" />
+      </div>
 
-      <label>上層部門：</label>
-      <select v-model="formData.parentId">
-        <option :value="null">無</option>
-        <option
-          v-for="dept in filteredDepartments"
-          :key="dept.id"
-          :value="dept.id"
-        >
-          {{ dept.name }}
-        </option>
-      </select>
+      <div class="form-group">
+        <label>上層部門：</label>
+        <select v-model="localForm.parentId">
+          <!-- 若不選上層部門 -->
+          <option :value="null">（無）</option>
+          <!-- 從 props.deptOptions 動態生成下拉清單 -->
+          <option
+            v-for="dept in deptOptions"
+            :key="dept.id"
+            :value="dept.id"
+          >
+            {{ dept.name }}
+          </option>
+        </select>
+      </div>
 
       <div class="modal-actions">
-        <button class="btn btn-primary" @click="handleSubmit">儲存</button>
-        <button class="btn btn-secondary" @click="$emit('close')">取消</button>
+        <button class="btn btn-primary" @click="handleSubmit">
+          儲存
+        </button>
+        <button class="btn btn-secondary" @click="handleClose">
+          取消
+        </button>
       </div>
     </div>
   </div>
 </template>
 
-<script>
-import { computed, reactive, watchEffect } from "vue";
+<script setup>
+//需要import defineProps, defineEmits  ...  有Bug 沒有import他不會自動偵測到
+import { computed, reactive, watchEffect, defineProps, defineEmits } from "vue";  
 
-export default {
-  name: "DepartmentForm",
-  props: {
-    department: {
-      type: Object,
-      default: null,
-    },
-    departments: {
-      type: Array,
-      required: true,
-    },
+//接收父層傳來的props
+const props = defineProps({
+  // 用於表示：當前要編輯的部門，或是 null 代表要新增
+  department :{
+    type : Object,
+    default : null
   },
-  setup(props, { emit }) {
-    const formData = reactive({
-      id: props.department?.id || null,
-      name: props.department?.name || "",
-      parentId: props.department?.parentId || null,
-    });
+  // 用於下拉選單顯示全部部門列表 (平列)，以便選擇父部門
+  departments :{
+    type : Array,
+    default : () => []
+  }
+})
 
-    // 過濾可選的上層部門
-    const filteredDepartments = computed(() => {
-      return props.departments.filter((dept) => dept.id !== formData.id);
-    });
+const emit = defineEmits(["submit","close"]);
 
-    // 監聽 `department` 變化並同步更新 `formData`
-    watchEffect(() => {
-      formData.id = props.department?.id || null;
-      formData.name = props.department?.name || "";
-      formData.parentId = props.department?.parentId || null;
-    });
+const localForm = reactive({
+  id:null,
+  name:"",
+  parentId:null,
+})
 
-    const handleSubmit = () => {
-      emit("submit", { ...formData });
-    };
+//根據有無Id選擇模式 有ID為編輯模式、無ID為新增模式
+const isEditMode = computed(() => !!localForm.id);
 
-    return {
-      formData,
-      filteredDepartments,
-      handleSubmit,
-    };
-  },
-};
+watchEffect(() => {
+  localForm.id = props.department?.id || null;
+  localForm.name = props.department?.name || "";
+  localForm.parentId = props.department?.parentId || null;
+});
+
+const deptOptions = computed(() => {
+  return props.departments.filter(
+    (dept) => dept.id !== localForm.id
+  );
+});
+
+const handleSubmit = () => {
+  if(!localForm.name){
+    alert("請輸入部門名稱");
+    return;
+  }
+
+  emit("submit",{
+    id : localForm.id,
+    name : localForm.name,
+    parentId : localForm.parentId,
+  });
+}
+
+const handleClose = () => {
+  emit("close");
+}
 </script>
 
 <style scoped>

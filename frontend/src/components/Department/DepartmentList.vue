@@ -8,7 +8,7 @@
     </div>
 
     <!-- 部門樹狀結構 -->
-    <DepartmentTree :departments="departments" @edit="handleEditDepartment" />
+    <DepartmentTree :departments="treeData" @edit="handleEditDepartment" />
 
     <!-- 新增/編輯部門 Popup -->
     <DepartmentForm
@@ -21,110 +21,109 @@
   </div>
 </template>
 
-<script>
-import { ref, computed } from "vue";
+<script setup>
+import { ref, onMounted } from "vue";
+import axios from "axios";
+import { API_BASE_URL } from "@/config";
 import DepartmentTree from "./DepartmentTree.vue";
 import DepartmentForm from "./DepartmentForm.vue";
 
-export default {
-  name: "DepartmentList",
-  components: {
-    DepartmentTree,
-    DepartmentForm,
-  },
-  setup() {
-    const departments = ref([
-      {
-        id: 1,
-        name: "總公司",
-        parentId: null,
-        children: [
-          {
-            id: 2,
-            name: "人事部",
-            parentId: 1,
-            children: [{ id: 4, name: "IT 部門", parentId: 2, children: [] }],
-          },
-          { id: 3, name: "財務部", parentId: 1, children: [] },
-        ],
-      },
-    ]);
+const departments = ref([]); //從後端取得的「原始」部門資料 (含有 subDepartments)
+const treeData =ref([]); //給DepartmentTree 用的「樹狀」資料結構
+const allDepartments = ref([]); //給DepartmentForm 用的「所有部門清單」(平列，用來選父部門)
 
-    // **獨立存放所有部門（用於選擇上層部門）**
-    const allDepartments = computed(() => {
-      const flatList = [];
-      const flatten = (deptList) => {
-        deptList.forEach((dept) => {
-          flatList.push({
-            id: dept.id,
-            name: dept.name,
-            parentId: dept.parentId,
-          });
-          if (dept.children?.length) {
-            flatten(dept.children);
-          }
-        });
-      };
-      flatten(departments.value);
-      return flatList;
-    });
+//取得部門清單
+const fetchDepartments = async () =>{
+  try{
+    const response = await axios.get(`${API_BASE_URL}/Department`);
+    
+    //原始資料
+    departments.value = response.data;
 
-    const showForm = ref(false);
-    const selectedDepartment = ref(null);
+    //給樹狀的資料
+    treeData.value = buildTree(departments.value);
 
-    const handleEditDepartment = (department) => {
-      selectedDepartment.value = department;
-      showForm.value = true;
-    };
+    //給表單用來選 父部門 的資料
+    allDepartments.value = [];
+    collectAllDepartments(departments.value,allDepartments.value);
 
-    const handleAddDepartment = () => {
-      selectedDepartment.value = null;
-      showForm.value = true;
-    };
+  }catch(error){
+    console.log("取得部門清單失敗:", error);
+  }
+};
 
-    const handleSaveDepartment = (department) => {
-      if (department.id) {
-        // 編輯部門
-        const dept = allDepartments.value.find((d) => d.id === department.id);
-        if (dept) {
-          dept.name = department.name;
-          dept.parentId = department.parentId;
-        }
-      } else {
-        // 新增部門
-        const newDept = {
-          id: Date.now(),
-          name: department.name,
-          parentId: department.parentId,
-          children: [],
-        };
-        allDepartments.value.push(newDept);
+//整理 DepartmentTree要用的樹狀結構 
+const buildTree = (rawList) => {
+  return rawList.map(d=>({
+    id: d.departmentID,
+    name: d.name,
+    children : d.subDepartments &&  d.subDepartments.length >0 ?buildTree(d.subDepartments) :[]
+  }))
+}
 
-        if (newDept.parentId) {
-          const parentDept = allDepartments.value.find(
-            (d) => d.id === newDept.parentId
-          );
-          if (parentDept) {
-            parentDept.children.push(newDept);
-          }
-        } else {
-          departments.value.push(newDept);
-        }
-      }
+//取得所有不重複部門集合
+const collectAllDepartments = (rawList,collector) =>{
+  rawList.forEach(d => {
+    collector.push({
+      id : d.departmentID,
+      name : d.name
+    })
+    if (d.subDepartments && d.subDepartments.length > 0) {
+      collectAllDepartments(d.subDepartments, collector)
+    }
+    console.log("collector:",collector);
+  });
+}
 
-      showForm.value = false;
-    };
+//元件載入時執行 刷新部門列表資料
+onMounted(fetchDepartments)
 
-    return {
-      departments,
-      allDepartments,
-      showForm,
-      selectedDepartment,
-      handleEditDepartment,
-      handleAddDepartment,
-      handleSaveDepartment,
-    };
-  },
+
+//事件處理器Event Handler
+const showForm = ref(false);
+const selectedDepartment = ref(null); //被選擇要編輯的部門資料
+const handleAddDepartment = async () => {
+  selectedDepartment.value = null;
+  showForm.value = true;
+};
+
+const handleEditDepartment = async (dept) => {
+  selectedDepartment.value ={
+    id : dept.departmentID,
+    name : dept.name,
+    parentId : null
+  }
+  showForm.value = true;
+};
+
+const handleSaveDepartment = async (formData)=> {
+  try{
+    let message = "";
+    //新增部門
+    if(formData.id == null){
+      await axios.post(`${API_BASE_URL}/Department`,{
+        name : formData.name,
+        affiliatedDepartmentID : formData.parentId
+      })
+      message = "新增部門成功";
+    }
+    else{//編輯部門
+      await axios.put(`${API_BASE_URL}/Department`,{
+        name : formData.name,
+        affiliatedDepartmentID : formData.parentId
+      })
+      message = "修改部門成功";
+    }
+
+    alert(message);
+    //成功後重新載入
+    await fetchDepartments();
+    showForm.value = false;
+
+  }catch(error){
+    console.log("儲存部門時發生錯誤",error);
+    alert("儲存部門時發生錯誤");
+  }
 };
 </script>
 
