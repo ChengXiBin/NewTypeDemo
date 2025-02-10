@@ -2,7 +2,9 @@
   <div class="department-container">
     <div class="header">
       <h2>部門列表</h2>
-      <button class="btn btn-primary add-button" @click="handleAddDepartment">新增部門</button>
+      <button class="btn btn-primary add-button" @click="handleAddDepartment">
+        新增部門
+      </button>
     </div>
 
     <!-- 部門樹狀結構 -->
@@ -41,9 +43,7 @@ export default {
             id: 2,
             name: "人事部",
             parentId: 1,
-            children: [
-              { id: 4, name: "IT 部門", parentId: 2, children: [] },
-            ],
+            children: [{ id: 4, name: "IT 部門", parentId: 2, children: [] }],
           },
           { id: 3, name: "財務部", parentId: 1, children: [] },
         ],
@@ -55,7 +55,11 @@ export default {
       const flatList = [];
       const flatten = (deptList) => {
         deptList.forEach((dept) => {
-          flatList.push({ id: dept.id, name: dept.name, parentId: dept.parentId });
+          flatList.push({
+            id: dept.id,
+            name: dept.name,
+            parentId: dept.parentId,
+          });
           if (dept.children?.length) {
             flatten(dept.children);
           }
@@ -88,11 +92,18 @@ export default {
         }
       } else {
         // 新增部門
-        const newDept = { id: Date.now(), name: department.name, parentId: department.parentId, children: [] };
+        const newDept = {
+          id: Date.now(),
+          name: department.name,
+          parentId: department.parentId,
+          children: [],
+        };
         allDepartments.value.push(newDept);
 
         if (newDept.parentId) {
-          const parentDept = allDepartments.value.find((d) => d.id === newDept.parentId);
+          const parentDept = allDepartments.value.find(
+            (d) => d.id === newDept.parentId
+          );
           if (parentDept) {
             parentDept.children.push(newDept);
           }
@@ -120,7 +131,7 @@ export default {
 <style scoped>
 .department-container {
   padding: 20px;
-  background: #f9f9f9;
+  background: #ffffff;
   border-radius: 8px;
 }
 

@@ -9,7 +9,11 @@
       <label>上層部門：</label>
       <select v-model="formData.parentId">
         <option :value="null">無</option>
-        <option v-for="dept in filteredDepartments" :key="dept.id" :value="dept.id">
+        <option
+          v-for="dept in filteredDepartments"
+          :key="dept.id"
+          :value="dept.id"
+        >
           {{ dept.name }}
         </option>
       </select>

@@ -46,6 +46,7 @@ public partial class AppDbContext : DbContext
             entity.Property(e => e.DisplayName).IsRequired().HasMaxLength(100);
             entity.Property(e => e.Email).IsRequired().HasMaxLength(100);
             entity.Property(e => e.Disable).IsRequired();
+            entity.Property(e => e.Role).IsRequired().HasMaxLength(20);
 
             entity.Property(e => e.CreatedTime).HasDefaultValueSql("GETDATE()");
             entity.Property(e => e.UpdatedTime).HasDefaultValueSql("GETDATE()");

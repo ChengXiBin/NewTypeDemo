@@ -1,6 +1,8 @@
-﻿using backend.Models;
+﻿using backend.Data;
+using backend.Models;
 using backend.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace backend.Controllers
 {
@@ -9,9 +11,11 @@ namespace backend.Controllers
     public class LoginController : Controller
     {
         private readonly AuthService _authService;
-        public LoginController(AuthService authService)
+        private readonly AppDbContext _context;
+        public LoginController(AuthService authService, AppDbContext context)
         {
             _authService = authService;
+            _context = context;
         }
 
 
@@ -29,7 +33,28 @@ namespace backend.Controllers
                 return Unauthorized(new { message = "帳號或密碼錯誤"});
             }
 
-            return Ok(new { token });
+            var employeeData = await _context.Employees
+                .Where(e => e.AccountID == loginRequest.AccountID)
+                .Select(e => new
+                {
+                    employeeName = e.DisplayName,
+                    departmentName = e.EmployeeDepartments
+                        .Select(ed => ed.Department.Name)
+                        .FirstOrDefault() ?? "未分配部門"
+                })
+                .FirstOrDefaultAsync();
+
+            if (employeeData == null)
+            {
+                return NotFound(new { message = "找不到員工資料" });
+            }
+
+            return Ok(new
+            {
+                token,
+                employeeData?.employeeName,
+                employeeData?.departmentName
+            });
         }
     }
 }

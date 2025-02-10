@@ -7,6 +7,18 @@ using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
+/*
+設定CORS
+AllowAnyOrigin() => 允許任何來源 (開發環境用)  若正式環境則改為使用WithOrigins(網域)
+AllowAnyMethod() => 允許所有 HTTP 方法 (GET、POST、PUT、DELETE等)
+AllowAnyHeader() => 允許所有請求標頭
+AllowCredentials() => 允許 Cookies / HTTP Authorization Header  正式環境使用  須搭配WithOrigins()
+*/
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy => policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
+});
+
 //註冊資料庫 EF Core
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -19,7 +31,17 @@ builder.Services.AddControllers();
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(s => 
+{
+    /*
+    讓Swagger有註解
+    記得csproj檔 要加
+    <GenerateDocumentationFile>True</GenerateDocumentationFile>  //讓 .NET產生專案的 xml註解文件
+    <NoWarn>1591</NoWarn>  //避免沒有 XML 註解時，編譯器顯示警告
+     */
+    var xmlFilename = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    s.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory,xmlFilename));
+});
 
 
 //*需要先Authentication才能Authorization
@@ -53,6 +75,8 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddAuthorization();
 
 var app = builder.Build();
+
+app.UseCors("AllowAll");  //要寫在app.UseRouting() 和 app.UseAuthorization() 之前
 
 //管理員初始化，確保 管理員帳號 存在
 using (var scope = app.Services.CreateScope())

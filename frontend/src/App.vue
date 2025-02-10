@@ -1,21 +1,12 @@
 <template>
   <div id="app">
-      <NavBar v-if="!$route.meta.hidNav"/>
-      <router-view/>
+    <NavBar v-if="!$route.meta.hidNav" />
+    <router-view />
   </div>
 </template>
 
-<script>
-import NavBar from './components/NavBar.vue'
-
-export default {
-  name: 'App',
-  components: {
-      NavBar,
-  }
-}
+<script setup>
+import NavBar from "./components/NavBar.vue";
 </script>
 
-<style>
-
-</style>
+<style></style>

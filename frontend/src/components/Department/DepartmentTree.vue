@@ -5,7 +5,12 @@
         <span @click="toggleExpand(dept.id)">
           {{ isExpanded[dept.id] ? "▼" : "▶" }} {{ dept.name }}
         </span>
-        <button class="btn btn-sm btn-warning ms-2" @click="$emit('edit', dept)">編輯</button>
+        <button
+          class="btn btn-sm btn-warning ms-2"
+          @click="$emit('edit', dept)"
+        >
+          編輯
+        </button>
       </div>
 
       <!-- 遞迴渲染子部門 -->
@@ -28,8 +33,8 @@ export default {
     departments: {
       type: Array,
       required: true,
-      default: () => []
-    }
+      default: () => [],
+    },
   },
   setup() {
     const isExpanded = ref({}); // 使用 Vue 3 的 `ref` 來管理展開狀態
@@ -40,9 +45,9 @@ export default {
 
     return {
       isExpanded,
-      toggleExpand
+      toggleExpand,
     };
-  }
+  },
 };
 </script>
 
